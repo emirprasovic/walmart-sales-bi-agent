@@ -86,7 +86,18 @@ Here is the sequence of prompts used to generate this project:
 - `create me a chart of treemap for products distribution in online retail datasource using apache superset mcp`
 - `update readme.md file with all prompts used in this conversation`
 
+#### 3. Data Lake Implementation
 
+- I want to expand online-retail-dw with additional table that provides info to the dim_products table. New table should contain reference to product, date and recommendation columns. 
+   Use postgress MCP to upgrade the databse structure   
+
+- for top 10 selling products in dim_products table do a search on web using brave search api mcp server and gather intelligence about them. Save the results into product_search.txt   
+   file    
+
+- use the @product_search.txt and create etl_process2.py script that will load the recommedations from the txt file into dim_product_recommendations table. If there is missing data do 
+   another brave search to gather all necessary intelligence. 
+   
+- 
 ## Key Features
 
 - **Idempotent Loads**: Uses `ON CONFLICT` clauses to prevent duplicate data if the script is run multiple times.
