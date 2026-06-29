@@ -37,7 +37,7 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")
-PROMPT_MD_PATH = Path("prompt.md")
+PROMPT_MD_PATH = Path("agent/prompt.md")
 # Recommended models: llama-3.3-70b-versatile or mixtral-8x7b-32768
 GROQ_MODEL = "llama-3.3-70b-versatile" 
 MAX_ROWS_DEFAULT = 100
