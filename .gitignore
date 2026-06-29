@@ -1,2 +1,4 @@
 .env
 venv/
+superset_config.py
+__pycache__

@@ -9,6 +9,9 @@
         "SUPERSET_PASSWORD": "admin"
       }
     },
+    "supabase": {
+      "httpUrl": "https://mcp.supabase.com/mcp?project_ref=osgszpfiitdulmbuygsh"
+    },
     "brave-search": {
       "command": "npx",
       "args": ["-y", "@brave/brave-search-mcp-server", "--transport", "stdio"],

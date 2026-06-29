@@ -1,105 +1,121 @@
-# Online Retail Data Warehouse ETL
+Here is the updated `README.md` reflecting the Walmart Sales ETL process and the Conversational BI Agent.
 
-This project implements a Star Schema data warehouse using PostgreSQL and a Python-based ETL process for the "Online Retail" dataset.
+---
+
+# Walmart Sales Data Warehouse & BI Agent
+
+This project implements a Star Schema data warehouse using PostgreSQL and a Python-based ETL process for the Walmart Sales dataset. It also includes a Conversational BI Agent that allows users to query the database using natural language via Groq or Gemini.
 
 ## Project Structure
 
-- `OnlineRetail.csv`: Source dataset containing transactions.
-- `etl_process.py`: Main ETL script (Extract, Transform, Load).
-- `.env`: Database connection credentials.
-- `requirements.txt`: Python dependencies.
+- `walmart_sales.csv`: Source dataset containing retail transactions.
+- `etl_process.py`: Main ETL script (Extract, Transform, Load) for the Walmart data.
+- `bi_agent_groq.py`: Natural language BI Assistant powered by Groq (Llama 3).
+- `bi_agent_gemini.py`: Natural language BI Assistant powered by Google Gemini.
+- `GROQ.md` / `GEMINI.md`: System instructions and schema metadata for the AI models.
+- `.env`: Database credentials and API keys.
 
 ## Star Schema Design
 
-The data is organized into a Star Schema for optimized analytical querying:
+The data is organized into a Star Schema optimized for retail analytics:
 
-- **Fact Table**: `fact_sales` (measures: quantity, unit_price, total_amount)
+- **Fact Table**: `fact_sales`
+  - Metrics: `weekly_sales`, `temperature`, `fuel_price`, `cpi`, `unemployment`.
 - **Dimension Tables**:
-  - `dim_product`: Product descriptions and stock codes.
-  - `dim_customer`: Customer IDs and geographical information.
-  - `dim_date`: Granular time dimension (year, month, day, quarter, hour, day of week).
+  - `dim_store`: Store identifiers.
+  - `dim_date`: Time dimension (day, month, year).
+  - `dim_holiday`: Holiday categorization (Holiday vs. Non-Holiday).
 
 ## Prerequisites
 
 - Python 3.10+
-- PostgreSQL database
-- Virtual environment (recommended)
+- PostgreSQL database (or Supabase instance)
+- API Keys for [Groq](https://console.groq.com/) or [Google AI Studio](https://aistudio.google.com/)
 
 ## Setup Instructions
 
 1. **Install Dependencies**:
+
    ```bash
-   pip install -r requirements.txt
+   pip install pandas psycopg2-binary sqlalchemy python-dotenv groq google-generativeai supabase tabulate
    ```
 
 2. **Configure Environment**:
-   Create a `.env` file in the root directory with your PostgreSQL credentials:
+   Create a `.env` file in the root directory:
+
    ```env
+   # Database (Postgres or Supabase)
    POSTGRES_HOST=your_host
    POSTGRES_PORT=5432
-   POSTGRES_DATABASE=online-retail-dw
-   POSTGRES_USER=your_user
+   POSTGRES_DATABASE=postgres
+   POSTGRES_USER=postgres
    POSTGRES_PASSWORD=your_password
+
+   # Supabase (For BI Agent API access)
+   SUPABASE_URL=your_url
+   SUPABASE_KEY=your_service_role_key
+
+   # AI Model Keys
+   GROQ_API_KEY=your_groq_key
+   GEMINI_API_KEY=your_gemini_key
    ```
 
 3. **Run ETL Process**:
-   Execute the Python script to clean the data and populate the database:
+   Load and clean the Walmart data into your PostgreSQL instance:
+
    ```bash
    python etl_process.py
    ```
 
-## Built with Gemini CLI
+4. **Launch the BI Agent**:
+   Query your data using natural language:
+   ```bash
+   python bi_agent_groq.py
+   # OR
+   python bi_agent_gemini.py
+   ```
 
-This project was developed using the Gemini CLI with the PostgreSQL extension.
+## Conversational BI Agent
 
-### PostgreSQL Extension Configuration
+The BI Agent acts as a bridge between natural language and your SQL database.
 
-The Gemini CLI uses the following environment variables to interact with the database. These should be set in your terminal session or stored in a `.env` file (the CLI automatically detects local `.env` files).
+1. **Natural Language to SQL**: User asks "Which store had the highest sales during holidays?"
+2. **SQL Generation**: The agent uses `GROQ.md` or `GEMINI.md` to understand the schema and generate valid PostgreSQL.
+3. **Execution**: The query is executed via Supabase RPC or `psycopg2`.
+4. **Interpretation**: The agent receives the raw data and provides a plain-English summary of the findings.
 
-```bash
-export POSTGRES_HOST="your-db-host"
-export POSTGRES_PORT="5432"
-export POSTGRES_DATABASE="online-retail-dw"
-export POSTGRES_USER="your-user"
-export POSTGRES_PASSWORD="your-password"
+## Development Prompts Sequence
+
+This project evolved through the following prompt sequence:
+
+### 1. Walmart ETL Implementation
+
+- `can you update this etl script so it references walmart_sales.csv with the following columns: Store, Date, Weekly_Sales, Holiday_Flag, Temperature, Fuel_Price, CPI, Unemployment`
+- `normalize the schema into fact_sales, dim_store, dim_date, and dim_holiday.`
+- `ensure date parsing handles DD-MM-YYYY format and use ON CONFLICT for idempotency.`
+
+### 2. BI Agent Development
+
+- `create a BI agent script that connects to Supabase and uses Gemini to turn questions into SQL.`
+- `update the script to use Groq API via GROQ_API_KEY and use GROQ.md for the system prompt.`
+- `fix the SyntaxError regarding backslashes in f-strings for Python versions < 3.12.`
+- `add a fallback to psycopg2 if the Supabase RPC "execute_sql" function is not found.`
+
+### 3. Database Functions (Supabase)
+
+To enable the Agent to run queries via the API, the following was implemented in the Supabase SQL editor:
+
+```sql
+create or replace function execute_sql(query text)
+returns json language plpgsql security definer as $$
+begin
+  return (select json_agg(t) from (execute query) t);
+end; $$;
 ```
 
-### Example Development Prompts
-
-Here is the sequence of prompts used to generate this project:
-
-#### 1. Data Analysis & Schema Generation
-- `analyze first 5 lines of the @OnlineRetail.csv file and create me a start schema for the data warehouse. create dim_product, dim_date, dim_customer and fact_sales tables.`
-- `implement this schema using postgres extension`
-- `generate a python ETL script named etl_process.py that uses pandas and psycopg2 to load OnlineRetail.csv into the postgres tables. handle deduplication, null customer IDs, and use surrogate keys for the fact table. implement batching and idempotency with ON CONFLICT.`
-
-#### 2. Superset Dashboard Implementation
-- `use superset mcp and list me datasources avaiable`
-- `I want you to use superset MCP server to connect to superset. Analyze database Online-Retail-DW and generate me a plan for executive dashboard design`
-- `Dont use @OnlineRetail.csv use online-retail-dw database where data is loaded. I want you to design dashboard with postgress connection and SQL queries there`
-- `Use this plan and implement this dashboard in apache superset via MCP`
-- `the chart revenue by country is not rendering its throwing error An error occurred while rendering the visualization: Error: Item with key "bar" is not registered.`
-- `can you fix Hourly Sales Volume chart to use x-axis hour`
-- `fix revenue by country chart to use map to show amounts per countries`
-- `fix the chart "Top 10 Products by Revenue" to use horizontal bar chart.`
-- `I got this error "Duplicate column/metric labels: "product_description". Please make sure all columns and metrics have a unique label."`
-- `create me a chart of treemap for products distribution in online retail datasource using apache superset mcp`
-- `update readme.md file with all prompts used in this conversation`
-
-#### 3. Data Lake Implementation
-
-- I want to expand online-retail-dw with additional table that provides info to the dim_products table. New table should contain reference to product, date and recommendation columns. 
-   Use postgress MCP to upgrade the databse structure   
-
-- for top 10 selling products in dim_products table do a search on web using brave search api mcp server and gather intelligence about them. Save the results into product_search.txt   
-   file    
-
-- use the @product_search.txt and create etl_process2.py script that will load the recommedations from the txt file into dim_product_recommendations table. If there is missing data do 
-   another brave search to gather all necessary intelligence. 
-   
-- 
 ## Key Features
 
-- **Idempotent Loads**: Uses `ON CONFLICT` clauses to prevent duplicate data if the script is run multiple times.
-- **Data Cleaning**: Handles missing customer IDs, deduplicates records, and calculates `total_amount`.
-- **Batch Processing**: Inserts data in batches of 1000 rows for better performance and memory management.
+- **Automated Schema Mapping**: AI agents automatically handle joins between fact and dimension tables.
+- **Self-Correction**: If the AI generates an invalid SQL query, the agent feeds the error back to the model for a second attempt.
+- **Batch ETL**: `etl_process.py` uses batching (1000 rows) to ensure memory stability during large CSV uploads.
+- **Idempotency**: All tables use `ON CONFLICT DO NOTHING` to allow for repeated ETL runs without data duplication.
